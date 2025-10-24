@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Badge } from '@/components/ui/badge';
@@ -15,79 +15,76 @@ interface Comment {
 interface ArticleData {
   id: number;
   title: string;
+  excerpt: string;
   content: string[];
   date: string;
   category: string;
   tags: string[];
   readTime: string;
   author: string;
+  comments: Comment[];
 }
-
-const articlesData: Record<string, ArticleData> = {
-  '1': {
-    id: 1,
-    title: 'Минимализм в современном дизайне',
-    content: [
-      'Минимализм в дизайне — это не просто отсутствие декоративных элементов. Это философия, которая требует глубокого понимания сути создаваемого продукта и умения выразить её максимально лаконично.',
-      'Основные принципы минималистичного подхода базируются на идее «меньше значит больше». Каждый элемент интерфейса должен иметь чёткую функцию и работать на общую композицию.',
-      'Пространство играет ключевую роль в минималистичном дизайне. Негативное пространство не является пустотой — это активный элемент композиции, который создаёт визуальную иерархию и направляет внимание пользователя.',
-      'Типографика в минимализме требует особого внимания. Выбор одного-двух шрифтов, их размеров и интерлиньяжа становится критически важным для создания визуальной структуры.',
-      'Цветовая палитра обычно ограничена. Чёрный, белый и оттенки серого создают строгую иерархию, а один акцентный цвет может использоваться для привлечения внимания к ключевым элементам.',
-      'Минимализм не означает простоту реализации. Напротив, создание действительно минималистичного дизайна требует множества итераций и глубокого анализа каждого решения.'
-    ],
-    date: '2024-10-20',
-    category: 'Дизайн',
-    tags: ['UI/UX', 'Минимализм', 'Тренды'],
-    readTime: '5 мин',
-    author: 'Анна Дизайнова'
-  },
-  '2': {
-    id: 2,
-    title: 'Типографика и читабельность',
-    content: [
-      'Типографика является основой любого текстового контента. От правильного выбора шрифтов и их комбинаций зависит не только эстетика, но и удобство чтения.',
-      'Читабельность определяется множеством факторов: размером шрифта, интерлиньяжем, длиной строки и контрастом между текстом и фоном.',
-      'Оптимальная длина строки для чтения составляет 50-75 символов. Слишком длинные строки утомляют глаза, а слишком короткие разбивают естественный ритм чтения.',
-      'Иерархия заголовков помогает структурировать информацию. Разница в размерах должна быть достаточной, чтобы мозг мгновенно считывал уровень важности.',
-      'Интерлиньяж влияет на комфорт чтения. Для основного текста рекомендуется значение 1.5-1.6 от размера шрифта.',
-      'Выбор шрифтовой пары требует понимания характера шрифтов. Гротеск для заголовков и антиква для текста — классическое сочетание, проверенное временем.'
-    ],
-    date: '2024-10-18',
-    category: 'Типографика',
-    tags: ['Шрифты', 'Типографика', 'Читабельность'],
-    readTime: '7 мин',
-    author: 'Пётр Шрифтов'
-  }
-};
-
-const mockComments: Comment[] = [
-  {
-    id: 1,
-    author: 'Мария К.',
-    date: '2024-10-21',
-    text: 'Отличная статья! Очень полезные практические советы, которые можно сразу применить в работе.'
-  },
-  {
-    id: 2,
-    author: 'Дмитрий С.',
-    date: '2024-10-21',
-    text: 'Согласен с автором на все 100%. Минимализм — это действительно сложная работа над деталями.'
-  },
-  {
-    id: 3,
-    author: 'Елена В.',
-    date: '2024-10-22',
-    text: 'Хотелось бы больше примеров из реальных проектов. Может быть, стоит добавить кейс-стади?'
-  }
-];
 
 export default function Article() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [article, setArticle] = useState<ArticleData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [commentAuthor, setCommentAuthor] = useState('');
 
-  const article = id ? articlesData[id] : null;
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        const response = await fetch(`https://functions.poehali.dev/0cc3e868-c12d-45a9-a98f-d20d44d179da?id=${id}`);
+        const data = await response.json();
+        setArticle(data);
+      } catch (error) {
+        console.error('Error fetching article:', error);
+        setArticle(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (id) {
+      fetchArticle();
+    }
+  }, [id]);
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (commentText.trim() && commentAuthor.trim() && id) {
+      try {
+        const response = await fetch('https://functions.poehali.dev/acbc0236-6715-4480-aa55-e8d091ef1506', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            article_id: parseInt(id),
+            author: commentAuthor,
+            text: commentText
+          })
+        });
+        
+        if (response.ok) {
+          const newComment = await response.json();
+          setArticle(prev => prev ? { ...prev, comments: [...prev.comments, newComment] } : null);
+          setCommentText('');
+          setCommentAuthor('');
+        }
+      } catch (error) {
+        console.error('Error submitting comment:', error);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-xl text-gray-600">Загрузка...</p>
+      </div>
+    );
+  }
 
   if (!article) {
     return (
@@ -101,14 +98,6 @@ export default function Article() {
       </div>
     );
   }
-
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (commentText.trim() && commentAuthor.trim()) {
-      setCommentText('');
-      setCommentAuthor('');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -174,7 +163,7 @@ export default function Article() {
         </div>
 
         <section className="border-t-2 border-black pt-12">
-          <h2 className="text-3xl font-bold mb-8">Комментарии ({mockComments.length})</h2>
+          <h2 className="text-3xl font-bold mb-8">Комментарии ({article.comments.length})</h2>
 
           <Card className="border-2 border-black shadow-none mb-8">
             <CardContent className="p-6">
@@ -210,7 +199,7 @@ export default function Article() {
           </Card>
 
           <div className="space-y-6">
-            {mockComments.map(comment => (
+            {article.comments.map(comment => (
               <Card key={comment.id} className="border-2 border-gray-300 shadow-none">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-3">

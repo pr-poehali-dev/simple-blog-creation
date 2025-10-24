@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Get article by ID",
+      "method": "GET",
+      "path": "/?id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "id": 1,
+        "title": "string",
+        "content": "array",
+        "tags": "array",
+        "comments": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Article not found",
+      "method": "GET",
+      "path": "/?id=999",
+      "expectedStatus": 404,
+      "expectedBody": {
+        "error": "Article not found"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,75 +15,42 @@ interface Article {
   readTime: string;
 }
 
-const articles: Article[] = [
-  {
-    id: 1,
-    title: 'Минимализм в современном дизайне',
-    excerpt: 'Исследование принципов минималистичного подхода к созданию интерфейсов и его влияние на пользовательский опыт.',
-    date: '2024-10-20',
-    category: 'Дизайн',
-    tags: ['UI/UX', 'Минимализм', 'Тренды'],
-    readTime: '5 мин'
-  },
-  {
-    id: 2,
-    title: 'Типографика и читабельность',
-    excerpt: 'Как правильный выбор шрифтов и их комбинаций влияет на восприятие контента и удержание внимания читателя.',
-    date: '2024-10-18',
-    category: 'Типографика',
-    tags: ['Шрифты', 'Типографика', 'Читабельность'],
-    readTime: '7 мин'
-  },
-  {
-    id: 3,
-    title: 'Архитектура информации',
-    excerpt: 'Структурирование контента для максимальной эффективности навигации и понимания иерархии данных.',
-    date: '2024-10-15',
-    category: 'Архитектура',
-    tags: ['IA', 'Структура', 'Навигация'],
-    readTime: '6 мин'
-  },
-  {
-    id: 4,
-    title: 'Цветовые системы в веб-дизайне',
-    excerpt: 'Создание согласованных цветовых палитр и их применение для достижения визуальной гармонии.',
-    date: '2024-10-12',
-    category: 'Дизайн',
-    tags: ['Цвет', 'Палитра', 'Визуал'],
-    readTime: '4 мин'
-  },
-  {
-    id: 5,
-    title: 'Адаптивная типографика',
-    excerpt: 'Методы масштабирования текста на разных устройствах с сохранением читабельности и эстетики.',
-    date: '2024-10-10',
-    category: 'Типографика',
-    tags: ['Адаптив', 'Типографика', 'Мобильный'],
-    readTime: '5 мин'
-  },
-  {
-    id: 6,
-    title: 'Пространство и ритм',
-    excerpt: 'Использование белого пространства и вертикального ритма для создания визуальной иерархии.',
-    date: '2024-10-08',
-    category: 'Архитектура',
-    tags: ['Пространство', 'Композиция', 'Ритм'],
-    readTime: '6 мин'
-  }
-];
-
 const categories = ['Все', 'Дизайн', 'Типографика', 'Архитектура'];
-const allTags = ['UI/UX', 'Минимализм', 'Тренды', 'Шрифты', 'Типографика', 'Читабельность', 'IA', 'Структура', 'Навигация', 'Цвет', 'Палитра', 'Визуал', 'Адаптив', 'Мобильный', 'Пространство', 'Композиция', 'Ритм'];
 
 const Index = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('Все');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showArchive, setShowArchive] = useState(false);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/a13a66f0-968b-47df-bc89-3a6bb9cb95b5');
+        const data = await response.json();
+        setArticles(data);
+        
+        const tagsSet = new Set<string>();
+        data.forEach((article: Article) => {
+          article.tags.forEach(tag => tagsSet.add(tag));
+        });
+        setAllTags(Array.from(tagsSet));
+      } catch (error) {
+        console.error('Error fetching articles:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchArticles();
+  }, []);
 
   const filteredArticles = articles.filter(article => {
     const categoryMatch = selectedCategory === 'Все' || article.category === selectedCategory;
-    const tagMatch = selectedTags.length === 0 || selectedTags.some(tag => article.tags.includes(tag));
+    const tagMatch = selectedTags.length === 0 || selectedTags.some(tag => article.tags?.includes(tag));
     return categoryMatch && tagMatch;
   });
 
@@ -189,6 +156,11 @@ const Index = () => {
           </div>
 
           <main className="max-w-7xl mx-auto px-6 py-16">
+            {loading ? (
+              <div className="text-center py-20">
+                <p className="text-xl text-gray-600">Загрузка статей...</p>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               {filteredArticles.map(article => (
                 <Card 
@@ -244,6 +216,8 @@ const Index = () => {
                   Сбросить фильтры
                 </Button>
               </div>
+            )}
+            </div>
             )}
           </main>
         </>

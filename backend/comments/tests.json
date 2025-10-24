@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Create comment",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "article_id": 1,
+        "author": "Тестовый пользователь",
+        "text": "Отличная статья!"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "number",
+        "author": "Тестовый пользователь",
+        "text": "Отличная статья!",
+        "date": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
