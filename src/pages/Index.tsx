@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -75,6 +76,7 @@ const categories = ['Все', 'Дизайн', 'Типографика', 'Арх�
 const allTags = ['UI/UX', 'Минимализм', 'Тренды', 'Шрифты', 'Типографика', 'Читабельность', 'IA', 'Структура', 'Навигация', 'Цвет', 'Палитра', 'Визуал', 'Адаптив', 'Мобильный', 'Пространство', 'Композиция', 'Ритм'];
 
 const Index = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('Все');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showArchive, setShowArchive] = useState(false);
@@ -189,7 +191,11 @@ const Index = () => {
           <main className="max-w-7xl mx-auto px-6 py-16">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               {filteredArticles.map(article => (
-                <Card key={article.id} className="border-2 border-black shadow-none hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-shadow cursor-pointer">
+                <Card 
+                  key={article.id} 
+                  className="border-2 border-black shadow-none hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/article/${article.id}`)}
+                >
                   <CardContent className="p-8">
                     <div className="flex items-center gap-3 mb-4 text-sm text-gray-600">
                       <Icon name="Calendar" size={16} />
@@ -211,7 +217,14 @@ const Index = () => {
                       ))}
                     </div>
                     
-                    <Button variant="outline" className="w-full border-2 border-black hover:bg-black hover:text-white transition-colors">
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-2 border-black hover:bg-black hover:text-white transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/article/${article.id}`);
+                      }}
+                    >
                       Читать далее
                     </Button>
                   </CardContent>
